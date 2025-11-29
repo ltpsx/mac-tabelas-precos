@@ -1,0 +1,44 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+
+# Arquivos CSV (dados sensíveis do banco)
+*.csv
+
+# Credenciais e configurações locais
+config.py
+conexao.py
+*.env
+
+# Arquivos temporários
+*.log
+*.tmp
+*.bak
+
+# IDEs
+.vscode/
+.idea/
+*.sublime-*
+
+# Sistema Operacional
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Netlify (já não vamos usar)
+.netlify/
+
+# Apenas manter a pasta deploy_netlify_site com os HTMLs finais
+# Tudo mais pode ser ignorado
+
+# Node modules (se houver)
+node_modules/
+
+# Arquivos de workflow antigos
+workflow_*.json
