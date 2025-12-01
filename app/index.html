@@ -479,21 +479,46 @@
   }
 
   function aplicarFiltro(filtro = "") {
+    const container = document.getElementById('lista');
+    const info = document.getElementById('info-lista');
+
+    // Se não tem busca, mostra mensagem inicial
+    if (!filtro.trim()) {
+      container.innerHTML = '<div class="empty-state">💡 Digite para buscar produtos<br><small style="color: #666; font-size: 11px;">Código, nome, marca ou fabricante</small></div>';
+      info.textContent = `${produtos.length} produtos disponíveis`;
+      return;
+    }
+
+    // Exige mínimo 2 caracteres
+    if (filtro.trim().length < 2) {
+      container.innerHTML = '<div class="empty-state">Digite pelo menos 2 caracteres...</div>';
+      info.textContent = '';
+      return;
+    }
+
     const fNorm = normalizarTexto(filtro);
     const termos = fNorm.split(/\s+/).filter(Boolean);
 
-    let filtrados = produtos;
+    const filtrados = produtos.filter(item => {
+      const campo = normalizarTexto(
+        `${item.nome || ""} ${item.marca || ""} ${item.codigo || ""} ${item.fabric || ""}`
+      );
+      return termos.every(t => campo.includes(t));
+    });
 
-    if (termos.length > 0) {
-      filtrados = produtos.filter(item => {
-        const campo = normalizarTexto(
-          `${item.nome || ""} ${item.marca || ""} ${item.codigo || ""} ${item.fabric || ""}`
-        );
-        return termos.every(t => campo.includes(t));
-      });
+    // Limita a 100 resultados para performance
+    const MAX_RESULTADOS = 100;
+    const mostrar = filtrados.slice(0, MAX_RESULTADOS);
+
+    if (filtrados.length > MAX_RESULTADOS) {
+      info.textContent = `Mostrando ${MAX_RESULTADOS} de ${filtrados.length} - refine sua busca`;
+    } else if (filtrados.length === 0) {
+      info.textContent = '';
+    } else {
+      info.textContent = `${filtrados.length} produto(s) encontrado(s)`;
     }
 
-    renderizarProdutos(filtrados);
+    renderizarProdutos(mostrar);
   }
 
   function renderizarProdutos(lista) {
@@ -816,9 +841,9 @@
     aplicarFiltro(e.target.value);
   });
 
-  // Inicialização
+  // Inicialização - não carrega produtos, só mostra mensagem
   console.log(`${produtos.length} produtos carregados`);
-  aplicarFiltro("");
+  aplicarFiltro(""); // Mostra mensagem inicial sem renderizar produtos
 </script>
 
 </body>
