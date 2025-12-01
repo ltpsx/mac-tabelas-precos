@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tabelas de Preços - Mac Atacado</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 800px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 40px;
+            font-size: 2.5em;
+        }
+
+        .cards {
+            display: grid;
+            gap: 20px;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        }
+
+        .card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            transition: transform 0.3s, box-shadow 0.3s;
+            cursor: pointer;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .card a {
+            color: white;
+            text-decoration: none;
+            font-size: 1.5em;
+            font-weight: bold;
+            display: block;
+        }
+
+        .card p {
+            color: rgba(255,255,255,0.9);
+            margin-top: 10px;
+            font-size: 0.9em;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            color: #666;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Tabelas de Preços</h1>
+
+        <div class="cards">
+            <div class="card" style="background: linear-gradient(135deg, #ff7b00 0%, #ffb347 100%);">
+                <a href="/app/">🛒 App de Pedidos</a>
+                <p>Faça pedidos online</p>
+            </div>
+
+            <div class="card">
+                <a href="/ata/">Tabela ATA</a>
+                <p>Almoxarifado 1</p>
+            </div>
+
+            <div class="card">
+                <a href="/birigui/">Tabela BIRIGUI</a>
+                <p>Almoxarifado 14</p>
+            </div>
+
+            <div class="card">
+                <a href="/prudente/">Tabela PRUDENTE</a>
+                <p>Almoxarifado 5</p>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>Atualizado automaticamente a cada 1 hora</p>
+        </div>
+    </div>
+</body>
+</html>
