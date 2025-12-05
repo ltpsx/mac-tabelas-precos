@@ -74,13 +74,13 @@ def main():
 
         # ETAPA 3: GIT ADD (no worktree)
         {
-            "comando": 'cd "C:\\Users\\compr\\.claude-worktrees\\precos_project\\zealous-sanderson" && git add app/ ata/ birigui/ prudente/ index.html',
+            "comando": 'cd "C:\\Users\\compr\\.claude-worktrees\\precos_project\\github-pages-deploy" && git add app/ ata/ birigui/ prudente/ index.html',
             "descricao": "3/4 - Adicionar arquivos ao Git"
         },
 
         # ETAPA 4: GIT COMMIT + PUSH (no worktree)
         {
-            "comando": f'cd "C:\\Users\\compr\\.claude-worktrees\\precos_project\\zealous-sanderson" && git commit -m "Atualizacao automatica - {datetime.now().strftime("%d/%m/%Y %H:%M")}" && git push origin zealous-sanderson:main',
+            "comando": f'cd "C:\\Users\\compr\\.claude-worktrees\\precos_project\\github-pages-deploy" && git commit -m "Atualizacao automatica - {datetime.now().strftime("%d/%m/%Y %H:%M")}" && git push origin github-pages-deploy:main',
             "descricao": "4/4 - Commit e push para GitHub"
         },
     ]

@@ -15,8 +15,8 @@ if sys.platform == 'win32':
 
 BASE_DIR = Path(__file__).parent
 
-# Pasta de deploy - agora aponta para o worktree do GitHub
-DEPLOY_DIR = Path(r"C:\Users\compr\.claude-worktrees\precos_project\zealous-sanderson")
+# Pasta de deploy - aponta para o worktree do GitHub Pages
+DEPLOY_DIR = Path(r"C:\Users\compr\.claude-worktrees\precos_project\github-pages-deploy")
 
 def preparar_estrutura():
     """Cria estrutura de pastas para deploy unico"""
