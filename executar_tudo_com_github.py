@@ -72,16 +72,16 @@ def main():
             "descricao": "2/4 - Preparar estrutura de deploy"
         },
 
-        # ETAPA 3: GIT ADD (no worktree)
+        # ETAPA 3: GIT ADD (repo principal)
         {
-            "comando": 'cd "C:\\Users\\compr\\.claude-worktrees\\precos_project\\github-pages-deploy" && git add app/ ata/ birigui/ prudente/ index.html',
-            "descricao": "3/4 - Adicionar arquivos ao Git"
+            "comando": 'git add docs/',
+            "descricao": "3/4 - Adicionar arquivos ao Git (docs)"
         },
 
-        # ETAPA 4: GIT COMMIT + PUSH (no worktree)
+        # ETAPA 4: GIT COMMIT + PUSH (repo principal)
         {
-            "comando": f'cd "C:\\Users\\compr\\.claude-worktrees\\precos_project\\github-pages-deploy" && git commit -m "Atualizacao automatica - {datetime.now().strftime("%d/%m/%Y %H:%M")}" && git push origin github-pages-deploy:main',
-            "descricao": "4/4 - Commit e push para GitHub"
+            "comando": f'git commit -m "Atualizacao automatica - {datetime.now().strftime("%d/%m/%Y %H:%M")}" && git push',
+            "descricao": "4/4 - Commit e push para GitHub (main)"
         },
     ]
 
