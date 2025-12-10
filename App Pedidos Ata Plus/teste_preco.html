@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Teste Conversão de Preço</title>
+</head>
+<body>
+    <h1>Teste de Conversão de Preço</h1>
+    <div id="resultado"></div>
+
+    <script>
+        function converterPreco(preco) {
+            if (typeof preco === 'number') return preco;
+            if (!preco) return 0;
+            const precoStr = preco.toString().replace(/\./g, '').replace(',', '.');
+            return parseFloat(precoStr) || 0;
+        }
+
+        const testeCases = [
+            { input: "12,08", esperado: 12.08 },
+            { input: "1.234,56", esperado: 1234.56 },
+            { input: "100,00", esperado: 100.00 },
+            { input: "0,50", esperado: 0.50 },
+            { input: 15.50, esperado: 15.50 }
+        ];
+
+        let html = '<table border="1" style="border-collapse: collapse; padding: 10px;"><tr><th>Input</th><th>Esperado</th><th>Resultado</th><th>Status</th></tr>';
+        
+        testeCases.forEach(test => {
+            const resultado = converterPreco(test.input);
+            const ok = resultado === test.esperado;
+            const status = ok ? '✅ OK' : '❌ FALHOU';
+            html += `<tr><td>${test.input}</td><td>${test.esperado}</td><td>${resultado}</td><td>${status}</td></tr>`;
+        });
+
+        html += '</table>';
+        document.getElementById('resultado').innerHTML = html;
+    </script>
+</body>
+</html>

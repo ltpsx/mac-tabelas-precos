@@ -42,3 +42,4 @@ node_modules/
 
 # Arquivos de workflow antigos
 workflow_*.json
+.claude/

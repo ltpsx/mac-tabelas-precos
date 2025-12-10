@@ -115,6 +115,15 @@
     border: 1px solid #222;
   }
 
+  .produto-sem-estoque {
+    opacity: 0.6;
+    background: #1a1a1a;
+  }
+
+  .produto-sem-estoque .produto-nome {
+    color: #888;
+  }
+
   .produto-header {
     display: flex;
     justify-content: space-between;
@@ -167,6 +176,17 @@
     border-radius: 6px;
     cursor: pointer;
     transition: all 0.2s;
+  }
+
+  .btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: #444;
+  }
+
+  .qtd-input:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 
   .btn-add {
@@ -369,6 +389,17 @@
     font-size: 13px;
   }
 
+  .btn-editar {
+    background: #2196F3;
+    color: white;
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+
+  .btn-editar:active {
+    transform: scale(0.97);
+  }
+
   .btn-excluir {
     background: #c62828;
     color: white;
@@ -448,7 +479,7 @@
 <div class="wrapper">
   <h1>🛒 App de Pedidos</h1>
   <p class="sub">MAC Atacado - Catálogo Digital</p>
-  <p class="sub">Atualizado: 05/12/2025 14:17</p>
+  <p class="sub">Atualizado: 10/12/2025 15:03</p>
 
   <div class="tabs">
     <div class="tab active" onclick="mudarTab('buscar')">Buscar</div>
@@ -484,7 +515,10 @@
 <!-- Botões fixos (só aparecem quando há itens no carrinho) -->
 <div id="carrinho-resumo" class="carrinho-resumo" style="display: none;">
   <button class="btn btn-ver-carrinho" onclick="mudarTab('carrinho')">
-    Ver Carrinho (<span id="carrinho-count-btn">0</span>)
+    <div style="display: flex; flex-direction: column; align-items: flex-start; gap: 2px;">
+      <div>🛒 Ver Carrinho (<span id="carrinho-count-btn">0</span> itens)</div>
+      <div style="font-size: 16px; font-weight: 700;">R$ <span id="carrinho-total-btn">0,00</span></div>
+    </div>
   </button>
   <button class="btn btn-limpar" onclick="confirmarLimparCarrinho()">🗑️</button>
 </div>
@@ -530,6 +564,21 @@
       .replace(/\p{Diacritic}/gu, "");
   }
 
+  // Converte preço de string BR (12,08) para número float (12.08)
+  function converterPreco(preco) {
+    if (typeof preco === 'number') return preco;
+    if (!preco) return 0;
+    // Remove pontos de milhar e substitui vírgula por ponto
+    const precoStr = preco.toString().replace(/\./g, '').replace(',', '.');
+    return parseFloat(precoStr) || 0;
+  }
+
+  // Formata número para exibição em pt-BR (12.08 -> 12,08)
+  function formatarPreco(valor) {
+    const numero = typeof valor === 'number' ? valor : converterPreco(valor);
+    return numero.toFixed(2).replace('.', ',');
+  }
+
   function aplicarFiltro(filtro = "") {
     const container = document.getElementById('lista');
     const info = document.getElementById('info-lista');
@@ -570,20 +619,23 @@
     info.textContent = `${exibir.length} produto(s) encontrado(s)${filtrados.length > 100 ? ' (mostrando primeiros 100)' : ''}`;
 
     container.innerHTML = exibir.map(p => {
-      const preco = parseFloat(p.preco || 0);
+      const preco = converterPreco(p.preco);
       const estoque = parseInt(p.estoque || 0);
+      const semEstoque = estoque === 0;
       return `
-        <div class="produto">
+        <div class="produto ${semEstoque ? 'produto-sem-estoque' : ''}">
           <div class="produto-header">
             <div class="produto-nome">${p.nome || 'Sem nome'}</div>
-            <div class="produto-preco">R$ ${preco.toFixed(2)}</div>
+            <div class="produto-preco">R$ ${formatarPreco(preco)}</div>
           </div>
           <div class="produto-info">
-            Cód: ${p.codigo || '-'} | Marca: ${p.marca || '-'} | Estoque: ${estoque}
+            Cód: ${p.codigo || '-'} | Marca: ${p.marca || '-'} | Estoque: ${estoque > 0 ? estoque : '<span style="color: #ff4444;">SEM ESTOQUE</span>'}
           </div>
           <div class="produto-acoes">
-            <input type="number" class="qtd-input" id="qtd-${p.codigo}" value="1" min="1" />
-            <button class="btn btn-add" onclick="addCarrinho('${p.codigo}')">Adicionar</button>
+            <input type="number" class="qtd-input" id="qtd-${p.codigo}" value="1" min="1" max="${estoque}" ${semEstoque ? 'disabled' : ''} />
+            <button class="btn btn-add" onclick="addCarrinho('${p.codigo}')" ${semEstoque ? 'disabled' : ''}>
+              ${semEstoque ? '❌ Indisponível' : 'Adicionar'}
+            </button>
             <button class="btn btn-detalhes" onclick="verDetalhes('${p.codigo}')">ℹ️</button>
           </div>
         </div>
@@ -595,8 +647,22 @@
     const produto = produtos.find(p => p.codigo === codigo);
     if (!produto) return;
 
+    // Verifica estoque
+    const estoque = parseInt(produto.estoque || 0);
+    if (estoque === 0) {
+      alert('❌ Produto sem estoque!');
+      return;
+    }
+
     const input = document.getElementById(`qtd-${codigo}`);
     const qtd = parseInt(input.value) || 1;
+
+    // Valida quantidade vs estoque
+    const qtdAtualCarrinho = carrinho[codigo]?.qtd || 0;
+    if (qtdAtualCarrinho + qtd > estoque) {
+      alert(`⚠️ Estoque insuficiente!\nDisponível: ${estoque}\nNo carrinho: ${qtdAtualCarrinho}`);
+      return;
+    }
 
     if (carrinho[codigo]) {
       carrinho[codigo].qtd += qtd;
@@ -641,11 +707,21 @@
     const itens = Object.values(carrinho);
     if (itens.length === 0) return;
 
+    // Captura nome do cliente e desconto
+    const nomeCliente = document.getElementById('nome-cliente')?.value.trim() || 'Cliente';
+    const descontoInput = document.getElementById('desconto-input');
+    const desconto = parseFloat(descontoInput?.value || 0);
+    const subtotal = calcularTotal();
+    const totalFinal = calcularTotalComDesconto();
+
     const pedido = {
       id: Date.now(),
       data: new Date().toLocaleString('pt-BR'),
+      cliente: nomeCliente,
       itens: itens,
-      total: calcularTotal()
+      subtotal: subtotal,
+      desconto: desconto,
+      total: totalFinal
     };
 
     pedidosSalvos.push(pedido);
@@ -653,7 +729,35 @@
 
     limparCarrinho();
     mudarTab('pedidos');
-    alert('✅ Pedido salvo com sucesso!');
+    alert(`✅ Pedido salvo com sucesso!\n\nCliente: ${nomeCliente}\nTotal: R$ ${formatarPreco(totalFinal)}`);
+  }
+
+  function editarPedido(id) {
+    const pedido = pedidosSalvos.find(p => p.id === id);
+    if (!pedido) return;
+
+    if (!confirm('Deseja editar este pedido?\n\nOs itens serão carregados no carrinho e você poderá modificá-los.')) return;
+
+    // Limpa carrinho atual
+    carrinho = {};
+
+    // Carrega itens do pedido no carrinho
+    pedido.itens.forEach(item => {
+      carrinho[item.codigo] = {
+        ...item,
+        qtd: item.qtd
+      };
+    });
+
+    // Remove o pedido da lista (será salvo novamente após edição)
+    pedidosSalvos = pedidosSalvos.filter(p => p.id !== id);
+    localStorage.setItem('pedidos', JSON.stringify(pedidosSalvos));
+
+    // Vai para aba do carrinho
+    mudarTab('carrinho');
+    atualizarUI();
+
+    alert('✏️ Pedido carregado no carrinho!\n\nVocê pode adicionar, remover ou alterar itens.\nQuando terminar, salve o pedido novamente.');
   }
 
   function excluirPedido(id) {
@@ -667,28 +771,72 @@
     const pedido = pedidosSalvos.find(p => p.id === id);
     if (!pedido) return;
 
+    // Cabeçalho do pedido
+    const header = [
+      ['PEDIDO - MAC ATACADO'],
+      ['Cliente:', pedido.cliente || 'Cliente'],
+      ['Data:', pedido.data],
+      []
+    ];
+
+    // Itens do pedido
     const dados = pedido.itens.map(item => ({
       'Código': item.codigo,
       'Cód. Fabric': item.fabric,
       'Marca': item.marca,
       'Produto': item.nome,
       'Quantidade': item.qtd,
-      'Preço Unit.': parseFloat(item.preco || 0).toFixed(2),
-      'Subtotal': (parseFloat(item.preco || 0) * item.qtd).toFixed(2)
+      'Preço Unit.': formatarPreco(item.preco),
+      'Subtotal': formatarPreco(converterPreco(item.preco) * item.qtd)
     }));
 
-    const ws = XLSX.utils.json_to_sheet(dados);
+    // Rodapé com totais
+    const subtotal = pedido.subtotal || pedido.total;
+    const footer = [
+      {},
+      { 'Produto': 'Subtotal:', 'Subtotal': formatarPreco(subtotal) }
+    ];
+
+    if (pedido.desconto > 0) {
+      footer.push({ 'Produto': `Desconto (${pedido.desconto}%):`, 'Subtotal': `-${formatarPreco(subtotal * pedido.desconto / 100)}` });
+    }
+
+    footer.push({ 'Produto': 'TOTAL:', 'Subtotal': formatarPreco(pedido.total) });
+
+    const ws = XLSX.utils.aoa_to_sheet(header);
+    XLSX.utils.sheet_add_json(ws, dados, { origin: -1 });
+    XLSX.utils.sheet_add_json(ws, footer, { origin: -1, skipHeader: true });
+
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Pedido");
 
-    const filename = `pedido_${new Date(pedido.id).toISOString().slice(0,10)}.xlsx`;
+    const filename = `pedido_${pedido.cliente.replace(/\s+/g, '_')}_${new Date(pedido.id).toISOString().slice(0,10)}.xlsx`;
     XLSX.writeFile(wb, filename);
   }
 
   function calcularTotal() {
     return Object.values(carrinho).reduce((sum, item) => {
-      return sum + (parseFloat(item.preco || 0) * item.qtd);
+      return sum + (converterPreco(item.preco) * item.qtd);
     }, 0);
+  }
+
+  function calcularTotalComDesconto() {
+    const subtotal = calcularTotal();
+    const descontoInput = document.getElementById('desconto-input');
+    let desconto = parseFloat(descontoInput?.value || 0);
+
+    // Limita desconto a 5%
+    if (desconto > 5) {
+      desconto = 5;
+      if (descontoInput) descontoInput.value = 5;
+    }
+    if (desconto < 0) {
+      desconto = 0;
+      if (descontoInput) descontoInput.value = 0;
+    }
+
+    const valorDesconto = subtotal * (desconto / 100);
+    return subtotal - valorDesconto;
   }
 
   function atualizarUI() {
@@ -700,6 +848,10 @@
     document.getElementById('carrinho-count-btn').textContent = totalItens;
     document.getElementById('pedidos-count').textContent = pedidosSalvos.length;
 
+    // Atualiza total do botão fixo
+    const totalCarrinho = calcularTotalComDesconto();
+    document.getElementById('carrinho-total-btn').textContent = formatarPreco(totalCarrinho);
+
     // Mostra/esconde botões fixos
     const resumo = document.getElementById('carrinho-resumo');
     resumo.style.display = totalItens > 0 ? 'flex' : 'none';
@@ -707,6 +859,13 @@
     // Atualiza carrinho
     renderizarCarrinho();
     renderizarPedidos();
+
+    // Atualiza total com desconto
+    const totalComDescontoEl = document.getElementById('total-com-desconto');
+    if (totalComDescontoEl && totalItens > 0) {
+      const totalFinal = calcularTotalComDesconto();
+      totalComDescontoEl.textContent = `R$ ${formatarPreco(totalFinal)}`;
+    }
   }
 
   function renderizarCarrinho() {
@@ -726,10 +885,10 @@
           <div class="carrinho-item">
             <div class="carrinho-item-header">
               <div class="carrinho-item-nome">${item.nome}</div>
-              <div class="carrinho-item-preco">R$ ${(parseFloat(item.preco || 0) * item.qtd).toFixed(2)}</div>
+              <div class="carrinho-item-preco">R$ ${formatarPreco(converterPreco(item.preco) * item.qtd)}</div>
             </div>
             <div class="carrinho-item-info">
-              Qtd: ${item.qtd} x R$ ${parseFloat(item.preco || 0).toFixed(2)}
+              Qtd: ${item.qtd} x R$ ${formatarPreco(item.preco)}
             </div>
             <div class="carrinho-item-acoes">
               <button class="btn btn-remover" onclick="removerDoCarrinho('${item.codigo}')">Remover</button>
@@ -743,10 +902,28 @@
           <span>Itens:</span>
           <span>${itens.reduce((sum, item) => sum + item.qtd, 0)}</span>
         </div>
+        <div class="carrinho-total-linha" style="padding-top: 8px; border-top: 1px solid #333; margin-top: 8px;">
+          <span>Subtotal:</span>
+          <span>R$ ${formatarPreco(total)}</span>
+        </div>
+        <div class="carrinho-total-linha" style="align-items: center;">
+          <span>Desconto (máx 5%):</span>
+          <div style="display: flex; align-items: center; gap: 5px;">
+            <input type="number" id="desconto-input" min="0" max="5" step="0.1" value="0"
+              style="width: 60px; padding: 4px; text-align: center; background: #0a0a0a; border: 1px solid #333; border-radius: 4px; color: white;"
+              onchange="atualizarUI()" />
+            <span style="font-size: 12px;">%</span>
+          </div>
+        </div>
         <div class="carrinho-total-final">
           <span>Total:</span>
-          <span>R$ ${total.toFixed(2)}</span>
+          <span id="total-com-desconto">R$ ${formatarPreco(total)}</span>
         </div>
+      </div>
+
+      <div style="margin: 12px 0;">
+        <input type="text" id="nome-cliente" placeholder="Nome do cliente (opcional)"
+          style="width: 100%; padding: 10px; background: #0a0a0a; border: 1px solid #333; border-radius: 6px; color: white; font-size: 14px;" />
       </div>
 
       <button class="btn btn-finalizar" onclick="finalizarPedido()">
@@ -771,8 +948,16 @@
         ${pedidosSalvos.map(pedido => `
           <div class="pedido-card">
             <div class="pedido-header">
-              <div class="pedido-data">📅 ${pedido.data}</div>
-              <div class="pedido-total">R$ ${pedido.total.toFixed(2)}</div>
+              <div>
+                <div class="pedido-data">📅 ${pedido.data}</div>
+                <div style="font-size: 13px; color: var(--accent); margin-top: 2px;">
+                  👤 ${pedido.cliente || 'Cliente'}
+                </div>
+              </div>
+              <div style="text-align: right;">
+                <div class="pedido-total">R$ ${formatarPreco(pedido.total)}</div>
+                ${pedido.desconto > 0 ? `<div style="font-size: 11px; color: var(--muted);">Com ${pedido.desconto}% de desconto</div>` : ''}
+              </div>
             </div>
             <div class="pedido-itens">
               ${pedido.itens.length} item(ns) - ${pedido.itens.reduce((sum, i) => sum + i.qtd, 0)} unidade(s)
@@ -780,6 +965,9 @@
             <div class="pedido-acoes">
               <button class="btn btn-exportar" onclick="exportarPedido(${pedido.id})">
                 📥 Exportar XLSX
+              </button>
+              <button class="btn btn-editar" onclick="editarPedido(${pedido.id})">
+                ✏️ Editar
               </button>
               <button class="btn btn-excluir" onclick="excluirPedido(${pedido.id})">
                 🗑️
@@ -816,7 +1004,7 @@
       <div class="detalhes-grupo">
         <div class="detalhes-label">Preço</div>
         <div class="detalhes-valor" style="color: var(--price); font-size: 18px; font-weight: 700;">
-          R$ ${parseFloat(produto.preco || 0).toFixed(2)}
+          R$ ${formatarPreco(produto.preco)}
         </div>
       </div>
     `;
