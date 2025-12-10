@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>App de Pedidos - MAC Atacado</title>
+
+<!-- Biblioteca para exportar XLSX -->
+<script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+
+<style>
+  :root {
+    --bg: #050505;
+    --card-bg: #191919;
+    --accent: #ff7b00;
+    --accent2: #ffb347;
+    --text: #ffffff;
+    --muted: #aaaaaa;
+    --price: #00ff7f;
+    --cart: #4CAF50;
+  }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: Arial, sans-serif;
+  }
+
+  .wrapper {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 16px 12px 80px;
+  }
+
+  h1 {
+    text-align: center;
+    font-size: 22px;
+    margin: 6px 0 4px;
+  }
+
+  .sub {
+    text-align: center;
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 12px;
+  }
+
+  .tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+  }
+
+  .tab {
+    flex: 1;
+    padding: 10px;
+    text-align: center;
+    background: var(--card-bg);
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 14px;
+    border: 2px solid transparent;
+  }
+
+  .tab.active {
+    border-color: var(--accent);
+    background: linear-gradient(135deg, #1a1a1a, #2a2a2a);
+  }
+
+  .tab-content {
+    display: none;
+  }
+
+  .tab-content.active {
+    display: block;
+  }
+
+  #busca {
+    width: 100%;
+    padding: 10px 12px;
+    font-size: 16px;
+    border-radius: 10px;
+    border: 1px solid #333;
+    outline: none;
+    text-align: center;
+    background: #101010;
+    color: var(--text);
+    margin-bottom: 10px;
+  }
+
+  #busca::placeholder {
+    color: #555;
+  }
+
+  #info-lista {
+    font-size: 11px;
+    color: var(--muted);
+    text-align: center;
+    margin-bottom: 8px;
+  }
+
+  #lista {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .produto {
+    background: var(--card-bg);
+    border-radius: 10px;
+    padding: 12px;
+    border: 1px solid #222;
+  }
+
+  .produto-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 8px;
+  }
+
+  .produto-nome {
+    font-size: 14px;
+    font-weight: 600;
+    flex: 1;
+    line-height: 1.3;
+  }
+
+  .produto-preco {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--price);
+    margin-left: 10px;
+  }
+
+  .produto-info {
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+
+  .produto-acoes {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .qtd-input {
+    width: 60px;
+    padding: 6px;
+    font-size: 14px;
+    text-align: center;
+    border-radius: 6px;
+    border: 1px solid #333;
+    background: #0a0a0a;
+    color: var(--text);
+  }
+
+  .btn {
+    padding: 8px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-add {
+    background: var(--cart);
+    color: white;
+    flex: 1;
+  }
+
+  .btn-add:active {
+    transform: scale(0.97);
+  }
+
+  .btn-detalhes {
+    background: #444;
+    color: white;
+    padding: 8px 12px;
+  }
+
+  .empty-state {
+    text-align: center;
+    color: var(--muted);
+    padding: 40px 20px;
+    font-size: 16px;
+  }
+
+  .loading {
+    text-align: center;
+    color: var(--accent);
+    padding: 40px 20px;
+    font-size: 16px;
+  }
+
+  .carrinho-resumo {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(to top, var(--bg) 85%, transparent);
+    padding: 12px;
+    display: flex;
+    gap: 10px;
+  }
+
+  .btn-ver-carrinho {
+    flex: 1;
+    background: var(--accent);
+    color: white;
+    padding: 14px;
+    font-size: 15px;
+    font-weight: 700;
+  }
+
+  .btn-limpar {
+    background: #c62828;
+    color: white;
+    padding: 14px 20px;
+  }
+
+  .carrinho-lista {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .carrinho-item {
+    background: var(--card-bg);
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #222;
+  }
+
+  .carrinho-item-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 6px;
+  }
+
+  .carrinho-item-nome {
+    font-size: 13px;
+    font-weight: 600;
+    flex: 1;
+  }
+
+  .carrinho-item-preco {
+    font-size: 14px;
+    color: var(--price);
+    font-weight: 700;
+  }
+
+  .carrinho-item-info {
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+
+  .carrinho-item-acoes {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+
+  .btn-remover {
+    background: #c62828;
+    color: white;
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+
+  .carrinho-total {
+    background: linear-gradient(135deg, #1a1a1a, #2a2a2a);
+    padding: 12px;
+    border-radius: 10px;
+    margin-bottom: 12px;
+  }
+
+  .carrinho-total-linha {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 6px;
+    font-size: 13px;
+  }
+
+  .carrinho-total-final {
+    display: flex;
+    justify-content: space-between;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--price);
+    padding-top: 8px;
+    border-top: 1px solid #333;
+    margin-top: 6px;
+  }
+
+  .btn-finalizar {
+    background: var(--cart);
+    color: white;
+    width: 100%;
+    padding: 14px;
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+
+  .btn-secondary {
+    background: #444;
+    color: white;
+    width: 100%;
+    padding: 12px;
+    font-size: 14px;
+  }
+
+  .pedidos-lista {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .pedido-card {
+    background: var(--card-bg);
+    border-radius: 10px;
+    padding: 12px;
+    border: 1px solid #222;
+  }
+
+  .pedido-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+
+  .pedido-data {
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  .pedido-total {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--price);
+  }
+
+  .pedido-itens {
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+
+  .pedido-acoes {
+    display: flex;
+    gap: 8px;
+  }
+
+  .btn-exportar {
+    background: var(--accent);
+    color: white;
+    flex: 1;
+    padding: 8px;
+    font-size: 13px;
+  }
+
+  .btn-excluir {
+    background: #c62828;
+    color: white;
+    padding: 8px 16px;
+    font-size: 13px;
+  }
+
+  .modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.85);
+    z-index: 1000;
+    padding: 20px;
+    overflow-y: auto;
+  }
+
+  .modal.show {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .modal-content {
+    background: var(--bg);
+    border-radius: 15px;
+    max-width: 600px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    border: 2px solid var(--accent);
+  }
+
+  .modal-header {
+    padding: 16px;
+    border-bottom: 1px solid #333;
+  }
+
+  .modal-title {
+    font-size: 18px;
+    font-weight: 700;
+  }
+
+  .modal-body {
+    padding: 16px;
+  }
+
+  .modal-footer {
+    padding: 16px;
+    border-top: 1px solid #333;
+    display: flex;
+    gap: 10px;
+  }
+
+  .detalhes-grupo {
+    margin-bottom: 12px;
+  }
+
+  .detalhes-label {
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+
+  .detalhes-valor {
+    font-size: 14px;
+    color: var(--text);
+  }
+</style>
+</head>
+<body>
+
+<div class="wrapper">
+  <h1>🛒 App de Pedidos</h1>
+  <p class="sub">MAC Atacado - Catálogo Digital</p>
+  <p class="sub">Atualizado: 05/12/2025 14:17</p>
+
+  <div class="tabs">
+    <div class="tab active" onclick="mudarTab('buscar')">Buscar</div>
+    <div class="tab" onclick="mudarTab('carrinho')">Carrinho (<span id="carrinho-count">0</span>)</div>
+    <div class="tab" onclick="mudarTab('pedidos')">Pedidos (<span id="pedidos-count">0</span>)</div>
+  </div>
+
+  <!-- TAB: BUSCAR PRODUTOS -->
+  <div id="tab-buscar" class="tab-content active">
+    <input
+      type="text"
+      id="busca"
+      placeholder="🔍 Digite para buscar..."
+      autocomplete="off"
+    />
+    <div id="info-lista"></div>
+    <div id="lista">
+      <div class="loading">⏳ Carregando produtos...</div>
+    </div>
+  </div>
+
+  <!-- TAB: CARRINHO -->
+  <div id="tab-carrinho" class="tab-content">
+    <div id="carrinho-conteudo"></div>
+  </div>
+
+  <!-- TAB: PEDIDOS SALVOS -->
+  <div id="tab-pedidos" class="tab-content">
+    <div id="pedidos-conteudo"></div>
+  </div>
+</div>
+
+<!-- Botões fixos (só aparecem quando há itens no carrinho) -->
+<div id="carrinho-resumo" class="carrinho-resumo" style="display: none;">
+  <button class="btn btn-ver-carrinho" onclick="mudarTab('carrinho')">
+    Ver Carrinho (<span id="carrinho-count-btn">0</span>)
+  </button>
+  <button class="btn btn-limpar" onclick="confirmarLimparCarrinho()">🗑️</button>
+</div>
+
+<!-- Modal: Detalhes do Produto -->
+<div id="modal-detalhes" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <div class="modal-title" id="detalhes-titulo"></div>
+    </div>
+    <div class="modal-body" id="detalhes-corpo"></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeDetalhes()">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Dados dos produtos carregados externamente
+  let produtos = [];
+  let carrinho = {};
+  let pedidosSalvos = JSON.parse(localStorage.getItem('pedidos')) || [];
+
+  // Carrega dados do arquivo JSON externo
+  async function carregarProdutos() {
+    try {
+      const response = await fetch('dados.json');
+      if (!response.ok) throw new Error('Erro ao carregar dados');
+      produtos = await response.json();
+      console.log(`✅ ${produtos.length} produtos carregados`);
+      aplicarFiltro(''); // Mostra mensagem inicial
+    } catch (error) {
+      console.error('Erro ao carregar produtos:', error);
+      document.getElementById('lista').innerHTML = '<div class="empty-state">❌ Erro ao carregar produtos<br><small>Verifique sua conexão</small></div>';
+    }
+  }
+
+  function normalizarTexto(txt) {
+    return (txt || "")
+      .toString()
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/\p{Diacritic}/gu, "");
+  }
+
+  function aplicarFiltro(filtro = "") {
+    const container = document.getElementById('lista');
+    const info = document.getElementById('info-lista');
+
+    // Se não tem busca, mostra mensagem inicial
+    if (!filtro.trim()) {
+      container.innerHTML = '<div class="empty-state">💡 Digite para buscar produtos<br><small style="color: #666; font-size: 11px;">Código, nome, marca ou fabricante</small></div>';
+      info.textContent = `${produtos.length} produtos disponíveis`;
+      return;
+    }
+
+    // Exige mínimo 2 caracteres
+    if (filtro.trim().length < 2) {
+      container.innerHTML = '<div class="empty-state">Digite pelo menos 2 caracteres...</div>';
+      info.textContent = '';
+      return;
+    }
+
+    const fNorm = normalizarTexto(filtro);
+    const termos = fNorm.split(/\s+/).filter(Boolean);
+
+    const filtrados = produtos.filter(item => {
+      const campo = normalizarTexto(
+        `${item.nome || ""} ${item.marca || ""} ${item.codigo || ""} ${item.fabric || ""}`
+      );
+      return termos.every(t => campo.includes(t));
+    });
+
+    // Limita a 100 resultados para performance
+    const exibir = filtrados.slice(0, 100);
+
+    if (exibir.length === 0) {
+      container.innerHTML = '<div class="empty-state">😞 Nenhum produto encontrado</div>';
+      info.textContent = '';
+      return;
+    }
+
+    info.textContent = `${exibir.length} produto(s) encontrado(s)${filtrados.length > 100 ? ' (mostrando primeiros 100)' : ''}`;
+
+    container.innerHTML = exibir.map(p => {
+      const preco = parseFloat(p.preco || 0);
+      const estoque = parseInt(p.estoque || 0);
+      return `
+        <div class="produto">
+          <div class="produto-header">
+            <div class="produto-nome">${p.nome || 'Sem nome'}</div>
+            <div class="produto-preco">R$ ${preco.toFixed(2)}</div>
+          </div>
+          <div class="produto-info">
+            Cód: ${p.codigo || '-'} | Marca: ${p.marca || '-'} | Estoque: ${estoque}
+          </div>
+          <div class="produto-acoes">
+            <input type="number" class="qtd-input" id="qtd-${p.codigo}" value="1" min="1" />
+            <button class="btn btn-add" onclick="addCarrinho('${p.codigo}')">Adicionar</button>
+            <button class="btn btn-detalhes" onclick="verDetalhes('${p.codigo}')">ℹ️</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function addCarrinho(codigo) {
+    const produto = produtos.find(p => p.codigo === codigo);
+    if (!produto) return;
+
+    const input = document.getElementById(`qtd-${codigo}`);
+    const qtd = parseInt(input.value) || 1;
+
+    if (carrinho[codigo]) {
+      carrinho[codigo].qtd += qtd;
+    } else {
+      carrinho[codigo] = {
+        ...produto,
+        qtd: qtd
+      };
+    }
+
+    atualizarUI();
+    input.value = 1;
+
+    // Feedback visual
+    const btn = input.nextElementSibling;
+    const textoOriginal = btn.textContent;
+    btn.textContent = '✓ Adicionado';
+    btn.style.background = '#388e3c';
+    setTimeout(() => {
+      btn.textContent = textoOriginal;
+      btn.style.background = '';
+    }, 800);
+  }
+
+  function removerDoCarrinho(codigo) {
+    delete carrinho[codigo];
+    atualizarUI();
+  }
+
+  function limparCarrinho() {
+    carrinho = {};
+    atualizarUI();
+  }
+
+  function confirmarLimparCarrinho() {
+    if (confirm('Limpar todo o carrinho?')) {
+      limparCarrinho();
+    }
+  }
+
+  function finalizarPedido() {
+    const itens = Object.values(carrinho);
+    if (itens.length === 0) return;
+
+    const pedido = {
+      id: Date.now(),
+      data: new Date().toLocaleString('pt-BR'),
+      itens: itens,
+      total: calcularTotal()
+    };
+
+    pedidosSalvos.push(pedido);
+    localStorage.setItem('pedidos', JSON.stringify(pedidosSalvos));
+
+    limparCarrinho();
+    mudarTab('pedidos');
+    alert('✅ Pedido salvo com sucesso!');
+  }
+
+  function excluirPedido(id) {
+    if (!confirm('Excluir este pedido?')) return;
+    pedidosSalvos = pedidosSalvos.filter(p => p.id !== id);
+    localStorage.setItem('pedidos', JSON.stringify(pedidosSalvos));
+    atualizarUI();
+  }
+
+  function exportarPedido(id) {
+    const pedido = pedidosSalvos.find(p => p.id === id);
+    if (!pedido) return;
+
+    const dados = pedido.itens.map(item => ({
+      'Código': item.codigo,
+      'Cód. Fabric': item.fabric,
+      'Marca': item.marca,
+      'Produto': item.nome,
+      'Quantidade': item.qtd,
+      'Preço Unit.': parseFloat(item.preco || 0).toFixed(2),
+      'Subtotal': (parseFloat(item.preco || 0) * item.qtd).toFixed(2)
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(dados);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Pedido");
+
+    const filename = `pedido_${new Date(pedido.id).toISOString().slice(0,10)}.xlsx`;
+    XLSX.writeFile(wb, filename);
+  }
+
+  function calcularTotal() {
+    return Object.values(carrinho).reduce((sum, item) => {
+      return sum + (parseFloat(item.preco || 0) * item.qtd);
+    }, 0);
+  }
+
+  function atualizarUI() {
+    const itensCarrinho = Object.values(carrinho);
+    const totalItens = itensCarrinho.reduce((sum, item) => sum + item.qtd, 0);
+
+    // Atualiza contadores
+    document.getElementById('carrinho-count').textContent = totalItens;
+    document.getElementById('carrinho-count-btn').textContent = totalItens;
+    document.getElementById('pedidos-count').textContent = pedidosSalvos.length;
+
+    // Mostra/esconde botões fixos
+    const resumo = document.getElementById('carrinho-resumo');
+    resumo.style.display = totalItens > 0 ? 'flex' : 'none';
+
+    // Atualiza carrinho
+    renderizarCarrinho();
+    renderizarPedidos();
+  }
+
+  function renderizarCarrinho() {
+    const container = document.getElementById('carrinho-conteudo');
+    const itens = Object.values(carrinho);
+
+    if (itens.length === 0) {
+      container.innerHTML = '<div class="empty-state">🛒 Carrinho vazio<br><small>Adicione produtos para começar</small></div>';
+      return;
+    }
+
+    const total = calcularTotal();
+
+    container.innerHTML = `
+      <div class="carrinho-lista">
+        ${itens.map(item => `
+          <div class="carrinho-item">
+            <div class="carrinho-item-header">
+              <div class="carrinho-item-nome">${item.nome}</div>
+              <div class="carrinho-item-preco">R$ ${(parseFloat(item.preco || 0) * item.qtd).toFixed(2)}</div>
+            </div>
+            <div class="carrinho-item-info">
+              Qtd: ${item.qtd} x R$ ${parseFloat(item.preco || 0).toFixed(2)}
+            </div>
+            <div class="carrinho-item-acoes">
+              <button class="btn btn-remover" onclick="removerDoCarrinho('${item.codigo}')">Remover</button>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+
+      <div class="carrinho-total">
+        <div class="carrinho-total-linha">
+          <span>Itens:</span>
+          <span>${itens.reduce((sum, item) => sum + item.qtd, 0)}</span>
+        </div>
+        <div class="carrinho-total-final">
+          <span>Total:</span>
+          <span>R$ ${total.toFixed(2)}</span>
+        </div>
+      </div>
+
+      <button class="btn btn-finalizar" onclick="finalizarPedido()">
+        💾 Salvar Pedido
+      </button>
+      <button class="btn btn-secondary" onclick="confirmarLimparCarrinho()">
+        🗑️ Limpar Carrinho
+      </button>
+    `;
+  }
+
+  function renderizarPedidos() {
+    const container = document.getElementById('pedidos-conteudo');
+
+    if (pedidosSalvos.length === 0) {
+      container.innerHTML = '<div class="empty-state">📋 Nenhum pedido salvo<br><small>Finalize um pedido para salvá-lo</small></div>';
+      return;
+    }
+
+    container.innerHTML = `
+      <div class="pedidos-lista">
+        ${pedidosSalvos.map(pedido => `
+          <div class="pedido-card">
+            <div class="pedido-header">
+              <div class="pedido-data">📅 ${pedido.data}</div>
+              <div class="pedido-total">R$ ${pedido.total.toFixed(2)}</div>
+            </div>
+            <div class="pedido-itens">
+              ${pedido.itens.length} item(ns) - ${pedido.itens.reduce((sum, i) => sum + i.qtd, 0)} unidade(s)
+            </div>
+            <div class="pedido-acoes">
+              <button class="btn btn-exportar" onclick="exportarPedido(${pedido.id})">
+                📥 Exportar XLSX
+              </button>
+              <button class="btn btn-excluir" onclick="excluirPedido(${pedido.id})">
+                🗑️
+              </button>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  }
+
+  function verDetalhes(codigo) {
+    const produto = produtos.find(p => p.codigo === codigo);
+    if (!produto) return;
+
+    document.getElementById('detalhes-titulo').textContent = produto.nome || 'Produto';
+    document.getElementById('detalhes-corpo').innerHTML = `
+      <div class="detalhes-grupo">
+        <div class="detalhes-label">Código</div>
+        <div class="detalhes-valor">${produto.codigo || '-'}</div>
+      </div>
+      <div class="detalhes-grupo">
+        <div class="detalhes-label">Código Fabricante</div>
+        <div class="detalhes-valor">${produto.fabric || '-'}</div>
+      </div>
+      <div class="detalhes-grupo">
+        <div class="detalhes-label">Marca</div>
+        <div class="detalhes-valor">${produto.marca || '-'}</div>
+      </div>
+      <div class="detalhes-grupo">
+        <div class="detalhes-label">Estoque</div>
+        <div class="detalhes-valor">${produto.estoque || 0} unidade(s)</div>
+      </div>
+      <div class="detalhes-grupo">
+        <div class="detalhes-label">Preço</div>
+        <div class="detalhes-valor" style="color: var(--price); font-size: 18px; font-weight: 700;">
+          R$ ${parseFloat(produto.preco || 0).toFixed(2)}
+        </div>
+      </div>
+    `;
+
+    document.getElementById('modal-detalhes').classList.add('show');
+  }
+
+  function closeDetalhes() {
+    document.getElementById('modal-detalhes').classList.remove('show');
+  }
+
+  function mudarTab(nome) {
+    // Remove active de todas
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+
+    // Ativa a selecionada
+    document.querySelector(`.tab:nth-child(${nome === 'buscar' ? 1 : nome === 'carrinho' ? 2 : 3})`).classList.add('active');
+    document.getElementById(`tab-${nome}`).classList.add('active');
+
+    // Atualiza conteúdo se necessário
+    if (nome === 'carrinho') renderizarCarrinho();
+    if (nome === 'pedidos') renderizarPedidos();
+  }
+
+  // Event listeners
+  document.getElementById('busca').addEventListener('input', (e) => {
+    aplicarFiltro(e.target.value);
+  });
+
+  document.getElementById('modal-detalhes').addEventListener('click', (e) => {
+    if (e.target.id === 'modal-detalhes') closeDetalhes();
+  });
+
+  // Inicializa
+  carregarProdutos();
+  atualizarUI();
+</script>
+
+</body>
+</html>
