@@ -50,8 +50,8 @@ def preparar_estrutura():
             print(f"[AVISO] Nao encontrado: {origem}")
 
     # Copia o App de Pedidos (versão atualizada)
-    app_origem_html = BASE_DIR / "App Pedidos" / "app_pedidos_web.html"
-    app_origem_json = BASE_DIR / "App Pedidos" / "dados.json"
+    app_origem_html = BASE_DIR / "App Pedidos Ata Plus" / "app_pedidos_web.html"
+    app_origem_json = BASE_DIR / "App Pedidos Ata Plus" / "dados.json"
     app_destino_dir = DEPLOY_DIR / "app"
     app_destino_dir.mkdir(exist_ok=True)
     app_destino_html = app_destino_dir / "index.html"
