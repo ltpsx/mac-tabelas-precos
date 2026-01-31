@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>App de Pedidos - MAC Atacado</title>
+
+<!-- Biblioteca para exportar XLSX -->
+<script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+
+<style>
+  :root {
+    --bg: #050505;
+    --card-bg: #191919;
+    --accent: #2196F3;
+    --accent2: #64B5F6;
+    --text: #ffffff;
+    --muted: #aaaaaa;
+    --price: #00ff7f;
+    --cart: #4CAF50;
+  }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: Arial, sans-serif;
+  }
+
+  .wrapper {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 16px 12px 80px;
+  }
+
+  h1 {
+    text-align: center;
+    font-size: 22px;
+    margin: 6px 0 4px;
+  }
+
+  .sub {
+    text-align: center;
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 12px;
+  }
+
+  .loja-badge {
+    text-align: center;
+    background: var(--accent);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    display: inline-block;
+    margin: 0 auto 12px;
+    width: fit-content;
+  }
+
+  .header-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+  }
+
+  .tab {
+    flex: 1;
+    padding: 10px;
+    text-align: center;
+    background: var(--card-bg);
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 14px;
+    border: 2px solid transparent;
+  }
+
+  .tab.active {
+    border-color: var(--accent);
+    background: linear-gradient(135deg, #1a1a1a, #2a2a2a);
+  }
+
+  .tab-content {
+    display: none;
+  }
+
+  .tab-content.active {
+    display: block;
+  }
+
+  #busca {
+    width: 100%;
+    padding: 10px 12px;
+    font-size: 16px;
+    border-radius: 10px;
+    border: 1px solid #333;
+    outline: none;
+    text-align: center;
+    background: #101010;
+    color: var(--text);
+    margin-bottom: 10px;
+  }
+
+  #busca::placeholder {
+    color: #555;
+  }
+
+  #info-lista {
+    font-size: 11px;
+    color: var(--muted);
+    text-align: center;
+    margin-bottom: 8px;
+  }
+
+  #lista {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .item {
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 10px 12px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .item-info {
+    flex: 1;
+  }
+
+  .item-titulo {
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+
+  .item-linha {
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 2px;
+  }
+
+  .item-preco {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--price);
+    margin-top: 4px;
+  }
+
+  .item-controls {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+
+  .qty-display {
+    background: #101010;
+    padding: 6px 10px;
+    border-radius: 6px;
+    min-width: 35px;
+    text-align: center;
+    font-weight: 700;
+    font-size: 15px;
+  }
+
+  .btn-qty {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    border: none;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+  }
+
+  .btn-minus {
+    background: #f44336;
+    color: white;
+  }
+
+  .btn-plus {
+    background: var(--cart);
+    color: white;
+  }
+
+  .btn-qty:active {
+    transform: scale(0.9);
+  }
+
+  .btn-qty:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+
+  .cart-float {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: var(--cart);
+    color: white;
+    padding: 12px 16px;
+    border-radius: 25px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    cursor: pointer;
+    z-index: 99;
+    min-width: 70px;
+  }
+
+  .cart-icon {
+    font-size: 1.5em;
+    margin-bottom: 2px;
+  }
+
+  .cart-total {
+    font-size: 0.7em;
+    font-weight: bold;
+    white-space: nowrap;
+  }
+
+  .cart-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: #f44336;
+    color: white;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75em;
+    font-weight: bold;
+  }
+
+  .modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.9);
+    z-index: 200;
+    overflow-y: auto;
+    padding: 20px;
+  }
+
+  .modal.active {
+    display: block;
+  }
+
+  .modal-content {
+    background: var(--card-bg);
+    max-width: 600px;
+    margin: 0 auto;
+    border-radius: 15px;
+    overflow: hidden;
+  }
+
+  .modal-header {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #000;
+    padding: 20px;
+    font-size: 20px;
+    font-weight: bold;
+  }
+
+  .modal-body {
+    padding: 20px;
+    max-height: 50vh;
+    overflow-y: auto;
+  }
+
+  .cart-item {
+    background: #101010;
+    padding: 12px;
+    border-radius: 10px;
+    margin-bottom: 10px;
+  }
+
+  .cart-item-name {
+    font-weight: bold;
+    margin-bottom: 5px;
+  }
+
+  .cart-item-details {
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  .modal-footer {
+    padding: 20px;
+    background: #0a0a0a;
+  }
+
+  .input-group {
+    margin-bottom: 15px;
+  }
+
+  .input-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+    color: var(--text);
+  }
+
+  .input-group input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #333;
+    border-radius: 8px;
+    font-size: 16px;
+    background: #101010;
+    color: var(--text);
+  }
+
+  .btn {
+    width: 100%;
+    padding: 15px;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    margin-bottom: 10px;
+  }
+
+  .btn-primary {
+    background: var(--cart);
+    color: white;
+  }
+
+  .btn-secondary {
+    background: var(--accent);
+    color: #000;
+  }
+
+  .btn-danger {
+    background: #f44336;
+    color: white;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--muted);
+  }
+
+  .pedido-card {
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 15px;
+    margin-bottom: 10px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+  }
+
+  .pedido-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+
+  .pedido-cliente {
+    font-weight: bold;
+    font-size: 1.1em;
+  }
+
+  .pedido-data {
+    font-size: 0.85em;
+    color: var(--muted);
+  }
+
+  .pedido-info {
+    font-size: 0.9em;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+
+  .pedido-actions {
+    display: flex;
+    gap: 10px;
+  }
+
+  .pedido-actions button {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+  }
+</style>
+</head>
+
+<body>
+<div class="wrapper">
+  <div class="header-container">
+    <h1>🛒 App de Pedidos</h1>
+    <div class="loja-badge">ARAÇATUBA</div>
+  </div>
+  <p class="sub">MAC Atacado - Catálogo Digital</p>
+  <p class="sub">Atualizado: __ULTIMA_ATUALIZACAO__</p>
+
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('produtos')">Produtos</div>
+    <div class="tab" onclick="switchTab('pedidos')">Pedidos Salvos</div>
+  </div>
+
+  <!-- ABA PRODUTOS -->
+  <div id="tab-produtos" class="tab-content active">
+    <input type="text" id="busca" placeholder="Digite parte do nome, código ou marca..." />
+    <div id="info-lista"></div>
+    <div id="lista"></div>
+  </div>
+
+  <!-- ABA PEDIDOS SALVOS -->
+  <div id="tab-pedidos" class="tab-content">
+    <div id="pedidosSalvos"></div>
+  </div>
+</div>
+
+<!-- Botão Carrinho Flutuante -->
+<div class="cart-float" onclick="openCart()">
+  <div class="cart-icon">🛒</div>
+  <div class="cart-total" id="cartTotal">R$ 0,00</div>
+  <span class="cart-badge" id="cartBadge">0</span>
+</div>
+
+<!-- Modal Carrinho -->
+<div class="modal" id="cartModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      🛒 Carrinho de Pedidos
+    </div>
+    <div class="modal-body" id="cartItems">
+      <!-- Itens do carrinho -->
+    </div>
+    <div class="modal-footer">
+      <div class="input-group">
+        <label>Identificação do Pedido:</label>
+        <input type="text" id="clienteNome" placeholder="Ex: 2 rodas moto peças, Cliente João...">
+      </div>
+      <button class="btn btn-primary" onclick="finalizarPedido()">Finalizar Pedido</button>
+      <button class="btn btn-secondary" onclick="closeCart()">Continuar Comprando</button>
+      <button class="btn btn-danger" onclick="limparCarrinho()">Limpar Carrinho</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Detalhes do Pedido -->
+<div class="modal" id="detalhesModal">
+  <div class="modal-content">
+    <div class="modal-header" id="detalhesHeader">
+      📋 Detalhes do Pedido
+    </div>
+    <div class="modal-body" id="detalhesBody">
+      <!-- Detalhes do pedido -->
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeDetalhes()">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Dados dos produtos incorporados no HTML (gerado via Python)
+  const produtos = __DADOS_PRODUTOS__;
+
+  let carrinho = {};
+  let pedidosSalvos = JSON.parse(localStorage.getItem('pedidos')) || [];
+
+  function normalizarTexto(txt) {
+    return (txt || "")
+      .toString()
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/\p{Diacritic}/gu, "");
+  }
+
+  function aplicarFiltro(filtro = "") {
+    const container = document.getElementById('lista');
+    const info = document.getElementById('info-lista');
+
+    // Se não tem busca, mostra mensagem inicial
+    if (!filtro.trim()) {
+      container.innerHTML = '<div class="empty-state">💡 Digite para buscar produtos<br><small style="color: #666; font-size: 11px;">Código, nome, marca ou fabricante</small></div>';
+      info.textContent = `${produtos.length} produtos disponíveis`;
+      return;
+    }
+
+    // Exige mínimo 2 caracteres
+    if (filtro.trim().length < 2) {
+      container.innerHTML = '<div class="empty-state">Digite pelo menos 2 caracteres...</div>';
+      info.textContent = '';
+      return;
+    }
+
+    const fNorm = normalizarTexto(filtro);
+    const termos = fNorm.split(/\s+/).filter(Boolean);
+
+    const filtrados = produtos.filter(item => {
+      const campo = normalizarTexto(
+        `${item.nome || ""} ${item.marca || ""} ${item.codigo || ""} ${item.fabric || ""}`
+      );
+      return termos.every(t => campo.includes(t));
+    });
+
+    // Limita a 100 resultados para performance
+    const MAX_RESULTADOS = 100;
+    const mostrar = filtrados.slice(0, MAX_RESULTADOS);
+
+    if (filtrados.length > MAX_RESULTADOS) {
+      info.textContent = `Mostrando ${MAX_RESULTADOS} de ${filtrados.length} - refine sua busca`;
+    } else if (filtrados.length === 0) {
+      info.textContent = '';
+    } else {
+      info.textContent = `${filtrados.length} produto(s) encontrado(s)`;
+    }
+
+    renderizarProdutos(mostrar);
+  }
+
+  function renderizarProdutos(lista) {
+    const container = document.getElementById('lista');
+    const info = document.getElementById('info-lista');
+
+    if (lista.length === 0) {
+      container.innerHTML = '<div class="empty-state">Nenhum produto encontrado</div>';
+      info.textContent = '';
+      return;
+    }
+
+    info.textContent = `Mostrando ${lista.length} produto(s)`;
+
+    container.innerHTML = lista.map(prod => {
+      const cod = prod.codigo || "";
+      const fab = prod.fabric || "";
+      const mar = prod.marca || "";
+      const nome = prod.nome || "";
+      const est = prod.estoque || "";
+      const preco = prod.preco || "";
+
+      const qtdCarrinho = carrinho[cod] || 0;
+      const estoqueNum = parseInt(est) || 0;
+      const atingiuEstoque = qtdCarrinho >= estoqueNum;
+      const semEstoque = estoqueNum === 0;
+
+      return `
+        <div class="item">
+          <div class="item-info">
+            <div class="item-titulo">${nome}</div>
+            <div class="item-linha">
+              ${mar ? mar + " - " : ""}Cod: ${cod}${fab ? " / Fab: " + fab : ""}
+            </div>
+            <div class="item-linha">${est ? "Qtd: " + est : ""}</div>
+            <div class="item-preco">R$ ${preco}</div>
+          </div>
+          <div class="item-controls">
+            <button class="btn-qty btn-minus" onclick="alterarQtd('${cod}', -1)" ${qtdCarrinho === 0 ? 'disabled' : ''}>-</button>
+            <div class="qty-display">${qtdCarrinho}</div>
+            <button class="btn-qty btn-plus" onclick="alterarQtd('${cod}', 1)" ${atingiuEstoque || semEstoque ? 'disabled' : ''}>+</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function alterarQtd(codigo, delta) {
+    const produto = produtos.find(p => p.codigo === codigo);
+    if (!produto) return;
+
+    const qtdAtual = carrinho[codigo] || 0;
+    const estoqueDisponivel = parseInt(produto.estoque) || 0;
+    let novaQtd = qtdAtual + delta;
+
+    if (novaQtd < 0) {
+      novaQtd = 0;
+    }
+
+    if (novaQtd > estoqueDisponivel) {
+      alert(`Estoque disponível: ${estoqueDisponivel} unidades`);
+      novaQtd = estoqueDisponivel;
+    }
+
+    if (novaQtd === 0) {
+      delete carrinho[codigo];
+    } else {
+      carrinho[codigo] = novaQtd;
+    }
+
+    atualizarCarrinho();
+  }
+
+  function atualizarCarrinho() {
+    const badge = document.getElementById('cartBadge');
+    const totalDisplay = document.getElementById('cartTotal');
+
+    const totalItens = Object.values(carrinho).reduce((sum, qtd) => sum + qtd, 0);
+    badge.textContent = totalItens;
+
+    const valorTotal = Object.entries(carrinho).reduce((sum, [codigo, qtd]) => {
+      const produto = produtos.find(p => p.codigo === codigo);
+      if (produto) {
+        const preco = parseFloat(produto.preco.replace(',', '.'));
+        return sum + (preco * qtd);
+      }
+      return sum;
+    }, 0);
+
+    totalDisplay.textContent = `R$ ${valorTotal.toFixed(2).replace('.', ',')}`;
+
+    renderizarCarrinho();
+    aplicarFiltro(document.getElementById('busca').value);
+  }
+
+  function renderizarCarrinho() {
+    const container = document.getElementById('cartItems');
+    const itens = Object.entries(carrinho);
+
+    if (itens.length === 0) {
+      container.innerHTML = '<div class="empty-state">Carrinho vazio</div>';
+      return;
+    }
+
+    container.innerHTML = itens.map(([codigo, qtd]) => {
+      const produto = produtos.find(p => p.codigo === codigo);
+      if (!produto) return '';
+
+      const precoUnit = parseFloat(produto.preco.replace(',', '.'));
+      const subtotal = (precoUnit * qtd).toFixed(2).replace('.', ',');
+
+      return `
+        <div class="cart-item">
+          <div class="cart-item-name">${produto.nome}</div>
+          <div class="cart-item-details">
+            Código: ${produto.codigo}<br>
+            Quantidade: ${qtd}<br>
+            Preço unit.: R$ ${produto.preco}<br>
+            Subtotal: R$ ${subtotal}
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function limparCarrinho() {
+    if (confirm('Deseja realmente limpar o carrinho?')) {
+      carrinho = {};
+      atualizarCarrinho();
+    }
+  }
+
+  function openCart() {
+    document.getElementById('cartModal').classList.add('active');
+  }
+
+  function closeCart() {
+    document.getElementById('cartModal').classList.remove('active');
+  }
+
+  function finalizarPedido() {
+    const clienteNome = document.getElementById('clienteNome').value.trim();
+
+    if (!clienteNome) {
+      alert('Por favor, digite o nome do cliente!');
+      return;
+    }
+
+    if (Object.keys(carrinho).length === 0) {
+      alert('Carrinho vazio!');
+      return;
+    }
+
+    const itens = Object.entries(carrinho).map(([codigo, qtd]) => {
+      const produto = produtos.find(p => p.codigo === codigo);
+      return { ...produto, quantidade: qtd };
+    });
+
+    const total = itens.reduce((sum, item) => {
+      const preco = parseFloat(item.preco.replace(',', '.'));
+      return sum + (preco * item.quantidade);
+    }, 0);
+
+    const pedido = {
+      id: Date.now(),
+      cliente: clienteNome,
+      data: new Date().toLocaleString('pt-BR'),
+      itens: itens,
+      total: total.toFixed(2)
+    };
+
+    pedidosSalvos.push(pedido);
+    localStorage.setItem('pedidos', JSON.stringify(pedidosSalvos));
+
+    alert(`Pedido salvo com sucesso!\nCliente: ${clienteNome}\nTotal: R$ ${pedido.total.replace('.', ',')}`);
+
+    carrinho = {};
+    document.getElementById('clienteNome').value = '';
+    atualizarCarrinho();
+    closeCart();
+  }
+
+  function renderizarPedidosSalvos() {
+    const container = document.getElementById('pedidosSalvos');
+
+    if (pedidosSalvos.length === 0) {
+      container.innerHTML = '<div class="empty-state">Nenhum pedido salvo</div>';
+      return;
+    }
+
+    container.innerHTML = pedidosSalvos.map((pedido, index) => `
+      <div class="pedido-card">
+        <div class="pedido-header">
+          <div class="pedido-cliente">${pedido.cliente}</div>
+          <div class="pedido-data">${pedido.data}</div>
+        </div>
+        <div class="pedido-info">
+          ${pedido.itens.length} item(ns) - Total: R$ ${pedido.total.replace('.', ',')}
+        </div>
+        <div class="pedido-actions">
+          <button style="background: var(--accent); color: #000;" onclick="verDetalhes(${index})">Ver</button>
+          <button style="background: var(--cart); color: white;" onclick="exportarPedido(${index})">Exportar</button>
+          <button style="background: #f44336; color: white;" onclick="excluirPedido(${index})">Excluir</button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function verDetalhes(index) {
+    const pedido = pedidosSalvos[index];
+
+    document.getElementById('detalhesHeader').textContent = `📋 Pedido - ${pedido.cliente}`;
+
+    let html = `
+      <div style="background: #101010; padding: 12px; border-radius: 10px; margin-bottom: 15px;">
+        <div style="color: var(--muted); font-size: 12px; margin-bottom: 5px;">Data do Pedido</div>
+        <div style="font-weight: bold;">${pedido.data}</div>
+      </div>
+    `;
+
+    pedido.itens.forEach(item => {
+      const subtotal = (parseFloat(item.preco.replace(',', '.')) * item.quantidade).toFixed(2).replace('.', ',');
+      html += `
+        <div class="cart-item" style="margin-bottom: 10px;">
+          <div class="cart-item-name">${item.nome}</div>
+          <div class="cart-item-details">
+            Código: ${item.codigo}<br>
+            Marca: ${item.marca || 'N/A'}<br>
+            Quantidade: ${item.quantidade}<br>
+            Preço unit.: R$ ${item.preco}<br>
+            <strong style="color: var(--price);">Subtotal: R$ ${subtotal}</strong>
+          </div>
+        </div>
+      `;
+    });
+
+    html += `
+      <div style="background: #101010; padding: 15px; border-radius: 10px; margin-top: 15px; text-align: center;">
+        <div style="color: var(--muted); font-size: 12px; margin-bottom: 5px;">TOTAL DO PEDIDO</div>
+        <div style="font-size: 24px; font-weight: bold; color: var(--price);">R$ ${pedido.total.replace('.', ',')}</div>
+      </div>
+    `;
+
+    document.getElementById('detalhesBody').innerHTML = html;
+    document.getElementById('detalhesModal').classList.add('active');
+  }
+
+  function closeDetalhes() {
+    document.getElementById('detalhesModal').classList.remove('active');
+  }
+
+  function exportarPedido(index) {
+    const pedido = pedidosSalvos[index];
+
+    const dados = [];
+
+    dados.push(['PEDIDO - ' + pedido.cliente]);
+    dados.push(['Data:', pedido.data]);
+    dados.push([]);
+
+    dados.push(['Código', 'Produto', 'Marca', 'Quantidade', 'Preço Unit.', 'Subtotal']);
+
+    pedido.itens.forEach(item => {
+      const subtotal = (parseFloat(item.preco.replace(',', '.')) * item.quantidade).toFixed(2).replace('.', ',');
+      dados.push([
+        item.codigo,
+        item.nome,
+        item.marca || 'N/A',
+        item.quantidade,
+        'R$ ' + item.preco,
+        'R$ ' + subtotal
+      ]);
+    });
+
+    dados.push([]);
+    dados.push(['', '', '', '', 'TOTAL:', 'R$ ' + pedido.total.replace('.', ',')]);
+
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet(dados);
+
+    ws['!cols'] = [
+      { wch: 15 },
+      { wch: 40 },
+      { wch: 20 },
+      { wch: 10 },
+      { wch: 12 },
+      { wch: 12 }
+    ];
+
+    XLSX.utils.book_append_sheet(wb, ws, 'Pedido');
+    XLSX.writeFile(wb, `pedido_${pedido.cliente.replace(/\s/g, '_')}_${pedido.id}.xlsx`);
+
+    alert('Pedido exportado como Excel (XLSX)!');
+  }
+
+  function excluirPedido(index) {
+    if (confirm('Deseja realmente excluir este pedido?')) {
+      pedidosSalvos.splice(index, 1);
+      localStorage.setItem('pedidos', JSON.stringify(pedidosSalvos));
+      renderizarPedidosSalvos();
+    }
+  }
+
+  function switchTab(tab) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+
+    if (tab === 'produtos') {
+      document.querySelector('.tab:nth-child(1)').classList.add('active');
+      document.getElementById('tab-produtos').classList.add('active');
+    } else {
+      document.querySelector('.tab:nth-child(2)').classList.add('active');
+      document.getElementById('tab-pedidos').classList.add('active');
+      renderizarPedidosSalvos();
+    }
+  }
+
+  // Busca
+  document.getElementById('busca').addEventListener('input', (e) => {
+    aplicarFiltro(e.target.value);
+  });
+
+  // Inicialização - não carrega produtos, só mostra mensagem
+  console.log(`${produtos.length} produtos carregados`);
+  aplicarFiltro(""); // Mostra mensagem inicial sem renderizar produtos
+</script>
+
+</body>
+</html>
